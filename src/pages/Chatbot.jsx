@@ -1,72 +1,74 @@
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "../styles/global.css";
 
 export default function Chatbot() {
   const [messages, setMessages] = useState([
     {
-      text: "Hi there! I'm Saksham, your mental wellness companion. How can I help you today?",
+      text: "Hi there! I'm Saksham, your mental wellness companion. I'm here to listen, support, and guide you. How are you feeling today?",
       sender: "bot",
     },
   ]);
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(false);
+  const chatWindowRef = useRef(null);
 
   useEffect(() => {
-    console.log("Loaded API Key:", process.env.REACT_APP_API_KEY);
-  }, []);
+    if (chatWindowRef.current) {
+      chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const formatBotReply = (text) => {
+    return text
+      .replace(/### (.*?)\n?/g, '<h4>$1</h4>')
+      .replace(/- \*\*(.*?)\*\* \((.*?)\) – (.*?)\n?/g, '<li><strong>$1</strong> <em>($2)</em>: $3</li>')
+      .replace(/- (.*?)\n?/g, '<li>$1</li>')
+      .replace(/\n/g, '<br>');
+  };
 
   const handleSendMessage = async () => {
     if (inputText.trim() === "") return;
 
     const newUserMessage = { text: inputText, sender: "user" };
     setMessages((prevMessages) => [...prevMessages, newUserMessage]);
-    const userMessage = inputText;
+
+    const messageToSend = inputText;
     setInputText("");
     setLoading(true);
 
     try {
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      const response = await fetch("http://localhost:5000/api/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.REACT_APP_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-3.5-turbo",
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are Saksham, a kind and supportive mental wellness companion. You speak gently and encourage the user to share their feelings, suggest mindfulness tips, breathing exercises, and positive thoughts.",
-            },
-            ...messages.map((m) => ({
-              role: m.sender === "user" ? "user" : "assistant",
-              content: m.text,
-            })),
-            { role: "user", content: userMessage },
-          ],
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: messageToSend }),
       });
 
       const data = await response.json();
-      console.log("OpenAI response:", data);
+      console.log("Saksham response:", data);
 
-      if (data.choices && data.choices.length > 0) {
-        const reply = data.choices[0].message.content;
-        const newBotMessage = { text: reply, sender: "bot" };
-        setMessages((prevMessages) => [...prevMessages, newBotMessage]);
+      if (data.message) {
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { text: data.message, sender: "bot" },
+        ]);
       } else {
         setMessages((prevMessages) => [
           ...prevMessages,
-          { text: "⚠️ No response received. Please try again later.", sender: "bot" },
+          {
+            text: "⚠️ No response received. Please try again later.",
+            sender: "bot",
+          },
         ]);
       }
     } catch (error) {
-      console.error("Error fetching AI response:", error);
+      console.error("Error fetching Saksham response:", error);
       setMessages((prevMessages) => [
         ...prevMessages,
-        { text: "⚠️ Oops! Something went wrong. Try again.", sender: "bot" },
+        {
+          text: "⚠️ Oops! Something went wrong. You're not alone—let's try again in a moment.",
+          sender: "bot",
+        },
       ]);
     } finally {
       setLoading(false);
@@ -85,11 +87,20 @@ export default function Chatbot() {
       </nav>
 
       <div className="content-box chatbot-container">
-        <h2>Chat with Saksham AI</h2>
-        <div className="chat-window">
+        <h2>💬 Chat with Saksham AI</h2>
+        <p className="chat-intro">Saksham is here to support your emotional well-being. Whether you're feeling low, anxious, or just need someone to talk to—he's listening. 💙</p>
+
+        <div className="chat-window" ref={chatWindowRef}>
           {messages.map((m, index) => (
             <div key={index} className={`message ${m.sender === "user" ? "sent" : "received"}`}>
-              {m.text}
+              {m.sender === "bot" ? (
+                <div
+                  className="bot-reply"
+                  dangerouslySetInnerHTML={{ __html: formatBotReply(m.text) }}
+                />
+              ) : (
+                m.text
+              )}
             </div>
           ))}
           {loading && <div className="message received">⏳ Saksham is thinking...</div>}
@@ -107,6 +118,11 @@ export default function Chatbot() {
             {loading ? "..." : "Send"}
           </button>
         </div>
+
+        {/* Disclaimer */}
+        <p className="chat-disclaimer">
+          ⚠️ <strong>Disclaimer:</strong> Saksham is an AI-based mental wellness companion. While he strives to be helpful and empathetic, he may occasionally make mistakes or offer incomplete advice. For serious mental health concerns, please consult a qualified professional.
+        </p>
       </div>
     </div>
   );
