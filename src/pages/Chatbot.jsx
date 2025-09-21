@@ -38,7 +38,7 @@ export default function Chatbot() {
     setLoading(true);
 
     try {
-      const response = await fetch("https://heal-hub-healing-3.onrender.com", {
+      const response = await fetch("https://heal-hub-healing-3.onrender.com/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: messageToSend }),
