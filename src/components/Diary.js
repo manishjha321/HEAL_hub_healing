@@ -1,5 +1,7 @@
 import { useState } from "react";
 import "../styles/global.css";
+import { saveDiaryEntry } from "../firebaseDiary";
+import { auth } from "../firebase";
 
 const positiveResponses = [
   "Great job! Keep shining and spreading positivity!",
@@ -14,67 +16,79 @@ const negativeResponses = [
 ];
 
 const urgentResponses = [
-  "You are not alone in this storm. There are people who care deeply about you—even if it doesn’t feel that way right now. Please call 1800-121-3667, the Hello Lifeline for free, 24/7 support.",
-  "Your pain is real, but so is the possibility of healing. You don’t have to carry this weight alone. Reach out to AASRA’s helpline directory—they’re here to listen without judgment.",
-  "I know it feels unbearable right now, but this moment doesn’t define your entire life. You are worthy of love, help, and a second chance. Talk to the mentors in our community space",
-  "Please don’t make a permanent decision based on temporary pain. There are people trained to help—call Vandrevala Foundation’s 24/7 helpline at 1860-266-2345 or 9999-666-555.",
-  "You matter. Your story matters. Even if you feel broken, you are not beyond repair. Let someone walk with you through this darkness. Join our community support group",
-  "You are not weak for feeling this way. You are human. And humans need connection, compassion, and care. Let someone be there for you.",
-  "You’ve survived every hard day so far. That’s strength. Let today be the day you ask for help—not because you’re giving up, but because you’re choosing to fight differently.",
-  "There’s a future waiting for you that you can’t see right now. But I promise—it’s there. Please call 1800-121-3667 or visit our community Lifeline to talk to someone who understands.",
-  "Feeling like this is serious. Call a helpline immediately or reach out to us remember help is available",
-
-
-
-
-
-
-
-  
-  "Feeling like this is serious. Call a helpline immediately or reach out to us remember help is available",
+  "You are not alone in this storm. Please call 1800-121-3667.",
+  "Reach out to AASRA’s helpline—they are here to listen.",
+  "Talk to mentors in our community space.",
 ];
 
 const negativeKeywords = [
-  "sad", "depressed", "anxious", "stress", "bad", "down", "frustrated", "worried",
-  "blank", "cloudy", "disoriented", "distracted", "unfocused", "disconnected", "dazed",
-  "lost", "confused", "detached", "spaced out", "foggy", "absent-minded", "bewildered",
-  "perplexed", "uncertain", "hesitant", "vacant"
+  "sad", "depressed", "anxious", "stress", "bad", "down", "frustrated", "worried"
 ];
 
 function getDiaryFeedback(entry) {
-  const text = entry.toLowerCase();
-  const urgentKeywords = ["suicide", "kill myself", "end my life", "kill", "death","die","helpless"];
-  const positiveKeywords = ["happy","joy","excited","good","great","love","amazing","positive","peace"];
-  // Use the extended negativeKeywords above
+  const text = entry?.toLowerCase() || "";
+  const urgentKeywords = ["suicide", "kill myself", "end my life", "kill", "death", "die"];
+  const positiveKeywords = ["happy", "joy", "excited", "good", "great", "love", "amazing", "positive", "peace"];
+
   if (urgentKeywords.some(k => text.includes(k))) {
-    return urgentResponses[Math.floor(Math.random()*urgentResponses.length)];
+    return urgentResponses[Math.floor(Math.random() * urgentResponses.length)];
   } else if (positiveKeywords.some(k => text.includes(k))) {
-    return positiveResponses[Math.floor(Math.random()*positiveResponses.length)];
+    return positiveResponses[Math.floor(Math.random() * positiveResponses.length)];
   } else if (negativeKeywords.some(k => text.includes(k))) {
-    return negativeResponses[Math.floor(Math.random()*negativeResponses.length)];
+    return negativeResponses[Math.floor(Math.random() * negativeResponses.length)];
   } else {
     return "Thanks for sharing! Sometimes just writing down your thoughts helps.";
   }
 }
 
-
-
-
-export default function Diary() {
+export default function Diary({ onAIAnalyze, aiResponse, isAnalyzing }) {
   const [title, setTitle] = useState("");
   const [entry, setEntry] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [response, setResponse] = useState("");
+  const [usedAI, setUsedAI] = useState(false);
 
-  const analyzeEntry = () => {
-    setResponse(getDiaryFeedback(entry));
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert("You must be logged in to save a diary entry.");
+      return;
+    }
+
+    const entryDate = date || new Date().toISOString().slice(0, 10);
+
+    try {
+      // Save entry exactly as user wrote it
+      console.log("Saving diary entry:", { title, entry, date: entryDate, uid: user.uid });
+      await saveDiaryEntry(user.uid, title, entry, entryDate);
+      console.log("Entry saved!");
+
+      // Reset form
+      setTitle("");
+      setEntry("");
+      setDate(new Date().toISOString().slice(0, 10));
+
+      // Then optionally do AI feedback
+      if (navigator.onLine && onAIAnalyze) {
+        setUsedAI(true);
+        await onAIAnalyze(entry);
+      } else {
+        setUsedAI(false);
+        setResponse(getDiaryFeedback(entry));
+      }
+    } catch (err) {
+      console.error("Error saving entry:", err);
+      alert("Failed to save diary entry.");
+    }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    analyzeEntry();
+  const handleClear = () => {
     setEntry("");
     setTitle("");
+    setResponse("");
+    setUsedAI(false);
   };
 
   return (
@@ -103,7 +117,33 @@ export default function Diary() {
         />
         <button type="submit" className="btn primary-btn">Submit Entry</button>
       </form>
-      {response && <div className="diary-response">{response}</div>}
+
+      {!usedAI && response && (
+        <div className="diary-response">
+          <h4>Keyword Feedback 💬</h4>
+          <p>{response}</p>
+        </div>
+      )}
+
+      {isAnalyzing && (
+        <div className="diary-response ai-feedback">
+          <h4>AI Insight 🧠</h4>
+          <p>Analyzing your entry… please wait</p>
+        </div>
+      )}
+
+      {usedAI && !isAnalyzing && aiResponse && (
+        <div className="diary-response ai-feedback">
+          <h4>AI Insight 🧠</h4>
+          <p>{aiResponse}</p>
+        </div>
+      )}
+
+      {(response || aiResponse) && (
+        <button onClick={handleClear} className="btn secondary-btn" style={{ marginTop: "1rem" }}>
+          Clear Entry
+        </button>
+      )}
     </div>
   );
 }

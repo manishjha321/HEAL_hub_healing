@@ -1395,3 +1395,79 @@ h2 {
   padding: 6px 12px;
   border-top: 1px solid #eee;
 }
+.nav-dropdown {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  position: absolute;
+  background-color: white;
+  border: 1px solid #ccc;
+  padding: 8px;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+}
+
+.dropdown-link {
+  display: block;
+  padding: 4px 8px;
+  text-decoration: none;
+  color: black;
+}
+
+.dropdown-link:hover {
+  background-color: #f0f0f0;
+}
+.insight-container {
+  padding: 1rem;
+  max-width: 900px;
+  margin: auto;
+}
+
+.diary-list {
+  margin-bottom: 2rem;
+}
+
+.diary-card {
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: #fefefe;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.diary-card button {
+  font-weight: bold;
+  font-size: 1.1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #2a7ae2;
+}
+
+.diary-card button:hover {
+  text-decoration: underline;
+}
+
+.diary-date {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.full-report {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 10px;
+  background-color: #eef6ff;
+  border: 2px dashed #2a7ae2;
+  white-space: pre-wrap;
+  font-family: "Arial", sans-serif;
+  line-height: 1.5;
+}

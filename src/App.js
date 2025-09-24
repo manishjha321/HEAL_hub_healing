@@ -8,6 +8,7 @@ import Community from "./pages/Community";
 import AboutUs from "./components/AboutUs";
 import ChatSpace from "./components/ChatSpace";
 import AppointmentForm from "./components/AppointmentForm";
+import Insight from "./components/Insight"; // ✅ NEW IMPORT
 import { auth } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -28,14 +29,15 @@ function App() {
   return (
     <Router>
       <Routes>
-  <Route path="/" element={user ? <Navigate to="/dashboard" /> : <Login />} />
-  <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/" />} />
-  <Route path="/resources" element={user ? <Resources /> : <Navigate to="/" />} />
-  <Route path="/chatbot" element={user ? <Chatbot /> : <Navigate to="/" />} />
-  <Route path="/community" element={user ? <Community /> : <Navigate to="/" />} />
-  <Route path="/about" element={<AboutUs />} />
-  <Route path="/chatspace" element={<ChatSpace />} />
-  <Route path="/appointment" element={<AppointmentForm />} />
+        <Route path="/" element={user ? <Navigate to="/dashboard" /> : <Login />} />
+        <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/" />} />
+        <Route path="/resources" element={user ? <Resources /> : <Navigate to="/" />} />
+        <Route path="/chatbot" element={user ? <Chatbot /> : <Navigate to="/" />} />
+        <Route path="/community" element={user ? <Community /> : <Navigate to="/" />} />
+        <Route path="/insight" element={user ? <Insight /> : <Navigate to="/" />} /> {/* ✅ NEW ROUTE */}
+        <Route path="/about" element={<AboutUs />} />
+        <Route path="/chatspace" element={<ChatSpace />} />
+        <Route path="/appointment" element={<AppointmentForm />} />
       </Routes>
     </Router>
   );
