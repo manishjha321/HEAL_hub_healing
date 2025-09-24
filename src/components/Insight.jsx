@@ -47,7 +47,7 @@ export default function Insight() {
     setReport("");
 
     try {
-      const res = await fetch("https://your-backend-name.onrender.com/api/weekly-insight", {
+      const res = await fetch("https://heal-hub-healing-3.onrender.com/api/weekly-insight", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ entries }),
