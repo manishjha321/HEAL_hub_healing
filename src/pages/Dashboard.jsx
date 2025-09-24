@@ -1,10 +1,8 @@
-
-        import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { MdOutlineLightMode, MdModeNight, MdFilterVintage } from 'react-icons/md';
-import MentorsPage from '../components/MentorsPage';
 import Diary from '../components/Diary';
 import '../styles/global.css';
 
@@ -101,27 +99,21 @@ const Dashboard = () => {
     setMoodFeedback(feedback);
   };
 
-  // ----------------- FIXED AI ANALYSIS FUNCTION -----------------
+  // ----------------- UPDATED DIARY AI SUBMIT FUNCTION -----------------
   const handleAIAnalysis = async (diaryEntry) => {
     setIsAnalyzing(true);
+    setAIResponse('');
+
     try {
-      // Send diary as entries array
-      const payload = { entries: [diaryEntry] };
-
       const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://heal-hub-healing-3.onrender.com';
-
-      const res = await fetch(`${backendUrl}/api/weekly-insight`, {
+      const res = await fetch(`${backendUrl}/api/analyze-diary`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ diaryText: diaryEntry }),
       });
 
-      if (!res.ok) {
-        throw new Error(`Server responded with status ${res.status}`);
-      }
-
       const data = await res.json();
-      setAIResponse(data.insight || "AI couldn't generate an insight this time.");
+      setAIResponse(data.analysis);
     } catch (err) {
       console.error(err);
       setAIResponse('AI analysis failed. Please try again later.');
@@ -168,7 +160,11 @@ const Dashboard = () => {
 
       <div className="dashboard-grid">
         <div className="card diary-entry-card">
-          <Diary onAIAnalyze={handleAIAnalysis} aiResponse={aiResponse} isAnalyzing={isAnalyzing} />
+          <Diary
+            onAIAnalyze={handleAIAnalysis}
+            aiResponse={aiResponse}
+            isAnalyzing={isAnalyzing}
+          />
         </div>
 
         <div className="card mood-analysis-card">
@@ -224,7 +220,6 @@ const Dashboard = () => {
             }}
           >
             ✅ Check-in Today
-                  
           </button>
         </div>
 
@@ -266,3 +261,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
