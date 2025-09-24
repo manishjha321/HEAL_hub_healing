@@ -48,11 +48,10 @@ export default function Insight() {
     setReport("");
 
     try {
-      // Ensure entries are always sent as an array under 'entries'
       const payload = Array.isArray(entries) ? { entries } : { entries: [entries] };
 
       const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL || "https://heal-hub-healing-3.onrender.com"}/api/weekly-insight`,
+        "https://heal-hub-healing-3.onrender.com/api/weekly-insight", // fixed
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -166,4 +165,3 @@ export default function Insight() {
     </div>
   );
 }
-

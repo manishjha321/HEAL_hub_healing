@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+        import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
@@ -22,10 +23,10 @@ const Dashboard = () => {
   const [showInsightMenu, setShowInsightMenu] = useState(false);
 
   const soundSources = {
-  rain: '/rain.mp3',
-  forest: '/forest.mp3',
-  ocean: '/ocean.mp3',
-};
+    rain: '/rain.mp3',
+    forest: '/forest.mp3',
+    ocean: '/ocean.mp3',
+  };
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') || 'light-theme';
@@ -100,17 +101,29 @@ const Dashboard = () => {
     setMoodFeedback(feedback);
   };
 
-  const handleAIAnalysis = async (entryText) => {
+  // ----------------- FIXED AI ANALYSIS FUNCTION -----------------
+  const handleAIAnalysis = async (diaryEntry) => {
     setIsAnalyzing(true);
     try {
-      const res = await fetch('https://heal-hub-healing-3.onrender.com/api/weekly-insight', {
+      // Send diary as entries array
+      const payload = { entries: [diaryEntry] };
+
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://heal-hub-healing-3.onrender.com';
+
+      const res = await fetch(`${backendUrl}/api/weekly-insight`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ diaryText: entryText }),
+        body: JSON.stringify(payload),
       });
+
+      if (!res.ok) {
+        throw new Error(`Server responded with status ${res.status}`);
+      }
+
       const data = await res.json();
-      setAIResponse(data.analysis);
+      setAIResponse(data.insight || "AI couldn't generate an insight this time.");
     } catch (err) {
+      console.error(err);
       setAIResponse('AI analysis failed. Please try again later.');
     } finally {
       setIsAnalyzing(false);
@@ -211,17 +224,40 @@ const Dashboard = () => {
             }}
           >
             ✅ Check-in Today
+                  
           </button>
         </div>
+
         <div className="card sound-player-card">
           <h3>Ambient Sounds 🎧</h3>
           <div className="sound-buttons">
-            <button className={`sound-btn ${currentSound === 'rain' ? 'active' : ''}`} onClick={() => toggleSound('rain')}>Rain</button>
-            <button className={`sound-btn ${currentSound === 'forest' ? 'active' : ''}`} onClick={() => toggleSound('forest')}>Forest</button>
-            <button className={`sound-btn ${currentSound === 'ocean' ? 'active' : ''}`} onClick={() => toggleSound('ocean')}>Ocean</button>
+            <button
+              className={`sound-btn ${currentSound === 'rain' ? 'active' : ''}`}
+              onClick={() => toggleSound('rain')}
+            >
+              Rain
+            </button>
+            <button
+              className={`sound-btn ${currentSound === 'forest' ? 'active' : ''}`}
+              onClick={() => toggleSound('forest')}
+            >
+              Forest
+            </button>
+            <button
+              className={`sound-btn ${currentSound === 'ocean' ? 'active' : ''}`}
+              onClick={() => toggleSound('ocean')}
+            >
+              Ocean
+            </button>
           </div>
+
           {audioUrl && (
-            <audio src={audioUrl} controls autoPlay style={{ marginTop: '16px', width: '100%' }} />
+            <audio
+              src={audioUrl}
+              controls
+              autoPlay
+              style={{ marginTop: '16px', width: '100%' }}
+            />
           )}
         </div>
       </div>
@@ -230,6 +266,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
-
-        
