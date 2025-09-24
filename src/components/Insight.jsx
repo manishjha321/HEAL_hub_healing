@@ -23,6 +23,7 @@ export default function Insight() {
       try {
         const fetchedEntries = await getLastFiveEntries(user.uid);
         setEntries(fetchedEntries);
+        console.log("Fetched last 5 diary entries:", fetchedEntries);
       } catch (err) {
         console.error("Error fetching diary entries:", err);
         setError("Failed to fetch diary entries. Please try again later.");
@@ -38,7 +39,7 @@ export default function Insight() {
   const handleBack = () => setSelectedEntry(null);
 
   const generateReport = async () => {
-    if (entries.length === 0) {
+    if (!entries || entries.length === 0) {
       setReport("No diary entries to analyze.");
       return;
     }
@@ -47,11 +48,21 @@ export default function Insight() {
     setReport("");
 
     try {
-      const res = await fetch("https://heal-hub-healing-3.onrender.com/api/weekly-insight", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entries }),
-      });
+      // Ensure entries are always sent as an array under 'entries'
+      const payload = Array.isArray(entries) ? { entries } : { entries: [entries] };
+
+      const res = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL || "https://heal-hub-healing-3.onrender.com"}/api/weekly-insight`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(`Server responded with status ${res.status}`);
+      }
 
       const data = await res.json();
       const insightText = data.insight || "AI couldn't generate an insight this time.";
@@ -155,3 +166,4 @@ export default function Insight() {
     </div>
   );
 }
+
