@@ -103,7 +103,7 @@ const Dashboard = () => {
   const handleAIAnalysis = async (entryText) => {
     setIsAnalyzing(true);
     try {
-      const res = await fetch('http://localhost:5000/api/analyze-diary', {
+      const res = await fetch('https://heal-hub-healing-3.onrender.com/api/weekly-insight', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ diaryText: entryText }),
