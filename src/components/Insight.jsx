@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getLastFiveEntries } from "../firebaseDiary";
 import { auth } from "../firebase";
+import jsPDF from "jspdf";
 import "../styles/global.css";
 
 export default function Insight() {
@@ -51,7 +52,7 @@ export default function Insight() {
       const payload = Array.isArray(entries) ? { entries } : { entries: [entries] };
 
       const res = await fetch(
-        "https://heal-hub-healing-3.onrender.com/api/weekly-insight", // fixed
+        "https://heal-hub-healing-3.onrender.com/api/weekly-insight",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -76,6 +77,68 @@ export default function Insight() {
     } finally {
       setAiLoading(false);
     }
+  };
+
+  // Extract sentiment keywords from report
+  const getSentimentSummary = () => {
+    const summary = { Positive: 0, Negative: 0, Neutral: 0 };
+    const lowerReport = report.toLowerCase();
+
+    if (lowerReport.includes("positive")) summary.Positive += 1;
+    if (lowerReport.includes("negative")) summary.Negative += 1;
+    if (lowerReport.includes("neutral")) summary.Neutral += 1;
+
+    return summary;
+  };
+
+  const handleDownloadReport = () => {
+    if (!report) return;
+
+    const doc = new jsPDF();
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("HealHub Emotional Insight Report", 20, 20);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.setTextColor(100);
+    doc.text("You are not alone.", 20, 30);
+
+    doc.setDrawColor(180);
+    doc.line(20, 35, 190, 35);
+
+    // Sentiment Graph
+    const sentimentSummary = getSentimentSummary();
+    const sentiments = Object.keys(sentimentSummary);
+    const maxValue = Math.max(...Object.values(sentimentSummary));
+    const graphTop = 45;
+    const barHeight = 6;
+    const barSpacing = 10;
+
+    doc.setFontSize(13);
+    doc.text("Sentiment Overview:", 20, graphTop);
+
+    sentiments.forEach((type, i) => {
+      const count = sentimentSummary[type];
+      const barWidth = (count / maxValue || 1) * 100;
+      const y = graphTop + 10 + i * barSpacing;
+
+      const colors = {
+        Positive: [76, 175, 80],
+        Negative: [244, 67, 54],
+        Neutral: [158, 158, 158]
+      };
+
+      doc.setFillColor(...colors[type]);
+      doc.rect(20, y, barWidth, barHeight, "F");
+      doc.text(`${type} (${count})`, 125, y + 5);
+    });
+
+    // Report Text
+    const lines = doc.splitTextToSize(report, 170);
+    doc.text(lines, 20, graphTop + 10 + sentiments.length * barSpacing + 10);
+
+    doc.save(`HealHub_AI_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
   if (loading) return <div>Loading diary entries...</div>;
@@ -129,19 +192,29 @@ export default function Insight() {
           </button>
 
           {report && (
-            <pre
-              style={{
-                marginTop: "1rem",
-                background: "#f9f9f9",
-                padding: "1rem",
-                borderRadius: "8px",
-                whiteSpace: "pre-wrap",
-                lineHeight: "1.5",
-                boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-              }}
-            >
-              {report}
-            </pre>
+            <>
+              <pre
+                style={{
+                  marginTop: "1rem",
+                  background: "#f9f9f9",
+                  padding: "1rem",
+                  borderRadius: "8px",
+                  whiteSpace: "pre-wrap",
+                  lineHeight: "1.5",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                }}
+              >
+                {report}
+              </pre>
+
+              <button
+                className="btn secondary-btn"
+                onClick={handleDownloadReport}
+                style={{ marginTop: "1rem" }}
+              >
+                📥 Download AI Report
+              </button>
+            </>
           )}
         </>
       )}

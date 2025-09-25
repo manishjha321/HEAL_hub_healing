@@ -37,6 +37,7 @@ export const saveDiaryEntry = async (uid, title, entry, date) => {
       where("uid", "==", uid),
       orderBy("timestamp", "desc")
     );
+    
     const snapshot = await getDocs(q);
     const entries = snapshot.docs;
 

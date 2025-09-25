@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { auth } from '../firebase';
+import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
+import { getDoc, doc } from 'firebase/firestore';
 import { MdOutlineLightMode, MdModeNight, MdFilterVintage } from 'react-icons/md';
+import { FaUserCircle } from 'react-icons/fa'; 
 import Diary from '../components/Diary';
 import '../styles/global.css';
 
@@ -33,6 +35,18 @@ const Dashboard = () => {
 
     const savedStreak = parseInt(localStorage.getItem('streakCount')) || 0;
     setStreakCount(savedStreak);
+
+    // ✅ Profile completion check
+    const checkProfileCompletion = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      const docRef = doc(db, 'users', user.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists() && docSnap.data().profileCompleted !== true) {
+        navigate('/setup-profile');
+      }
+    };
+    checkProfileCompletion();
   }, []);
 
   const toggleTheme = () => {
@@ -99,7 +113,6 @@ const Dashboard = () => {
     setMoodFeedback(feedback);
   };
 
-  // ----------------- UPDATED DIARY AI SUBMIT FUNCTION -----------------
   const handleAIAnalysis = async (diaryEntry) => {
     setIsAnalyzing(true);
     setAIResponse('');
@@ -130,6 +143,8 @@ const Dashboard = () => {
           <a href="/resources">Resources</a>
           <a href="/community">Community</a>
           <a href="/chatbot">Chat with Saksham</a>
+          
+
           <div
             className="nav-dropdown"
             onMouseEnter={() => setShowInsightMenu(true)}
@@ -143,6 +158,10 @@ const Dashboard = () => {
               </div>
             )}
           </div>
+          <Link to="/chattr" className="nav-item">Chattr
+    
+  </Link>
+
         </div>
         <div className="navbar-center">
           <span className="healhub-brand">
@@ -154,6 +173,9 @@ const Dashboard = () => {
           <button onClick={toggleTheme} className="theme-switcher-btn">
             {theme === 'light-theme' ? <MdOutlineLightMode /> : theme === 'dark-theme' ? <MdModeNight /> : <MdFilterVintage />}
           </button>
+          <Link to="/profile" className="profile-icon-link">
+            <FaUserCircle size={24} />
+          </Link>
           <button onClick={handleLogout} className="logout-btn">Log Out</button>
         </div>
       </nav>
@@ -200,6 +222,7 @@ const Dashboard = () => {
           {moodFeedback && <p style={{ marginTop: '10px', fontWeight: 'bold' }}>{moodFeedback}</p>}
         </div>
 
+        
         <div className="card streak-card">
           <h3>Self-Care Streak 🔥</h3>
           <div className="streak-display">

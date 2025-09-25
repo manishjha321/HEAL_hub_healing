@@ -1,6 +1,12 @@
 import { useState } from "react";
-import { auth } from "../firebase";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
+import { auth, db } from "../firebase";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import "../styles/global.css";
 
 export default function Login() {
@@ -8,15 +14,33 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isRegister, setIsRegister] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (isRegister) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // ✅ Ensure Firestore document is created with fallback
+        await setDoc(doc(db, "users", user.uid), {
+          email: user.email,
+          profileCompleted: false,
+        });
+
+        navigate("/welcome");
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        const docRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(docRef);
+        const data = docSnap.exists() ? docSnap.data() : null;
+
+        const isComplete = data?.profileCompleted === true;
+        navigate(isComplete ? "/dashboard" : "/welcome");
       }
     } catch (err) {
       alert(err.message);
@@ -40,10 +64,12 @@ export default function Login() {
   return (
     <div className="login-page-center">
       <div className="login-header">
-        <span className="healhub-brand" style={{marginBottom: '12px'}}>
+        <span className="healhub-brand" style={{ marginBottom: "12px" }}>
           <span className="hug-icon">💖🌿</span> HealHub
         </span>
-        <h2 style={{margin: '8px 0 18px 0', fontWeight: 600}}>Welcome to the HealHub</h2>
+        <h2 style={{ margin: "8px 0 18px 0", fontWeight: 600 }}>
+          Welcome to the HealHub
+        </h2>
       </div>
 
       <div className="login-box">
@@ -60,7 +86,7 @@ export default function Login() {
               />
               <button type="submit">Send Reset Email</button>
             </form>
-            <p onClick={() => setIsForgotPassword(false)} style={{marginTop: '1rem', cursor: 'pointer'}}>
+            <p onClick={() => setIsForgotPassword(false)} style={{ marginTop: "1rem", cursor: "pointer" }}>
               Back to Login
             </p>
             {message && <p className="info-message">{message}</p>}
@@ -85,10 +111,10 @@ export default function Login() {
               />
               <button type="submit">{isRegister ? "Register" : "Login"}</button>
             </form>
-            <p onClick={() => setIsForgotPassword(true)} style={{marginTop: '1rem', cursor: 'pointer'}}>
+            <p onClick={() => setIsForgotPassword(true)} style={{ marginTop: "1rem", cursor: "pointer" }}>
               Forgot Password?
             </p>
-            <p onClick={() => setIsRegister(!isRegister)} style={{cursor: 'pointer'}}>
+            <p onClick={() => setIsRegister(!isRegister)} style={{ cursor: "pointer" }}>
               {isRegister ? "Already have an account? Login" : "No account? Register"}
             </p>
           </>
